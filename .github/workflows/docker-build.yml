@@ -6,24 +6,24 @@ on:
       version:
         description: The version to build
 
-  push:
-    tags:
-      - '*.*'
-      - '*.*.*'
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        architecture: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Packages
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
@@ -31,4 +31,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/picseal:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/picseal:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/picseal:latest
+          platforms: ${{ matrix.architecture }}
